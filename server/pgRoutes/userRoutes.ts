@@ -36,7 +36,6 @@ import {
 
 const router = express.Router();
 
-
 /**
  * @swagger
  * /pg/user/registration:
@@ -44,6 +43,7 @@ const router = express.Router();
  *     summary: Register a new user
  *     tags:
  *       - Users
+ *
  *     requestBody:
  *       required: true
  *       content:
@@ -58,30 +58,34 @@ const router = express.Router();
  *               name:
  *                 type: string
  *                 example: Test User
+ *
  *               email:
  *                 type: string
  *                 format: email
  *                 example: test@example.com
+ *
  *               password:
  *                 type: string
  *                 format: password
  *                 example: password123
- *               role:
- *                 type: string
- *                 enum:
- *                   - User
- *                   - Admin
- *                 example: User
+ *
  *               avatar:
  *                 type: string
  *                 format: binary
+ *
  *     responses:
  *       201:
  *         description: User registered successfully
+ *
  *       400:
  *         description: Invalid request data
+ *
  *       409:
  *         description: Email already exists
+ *
+ *       429:
+ *         description: Too many registration attempts
+ *
  *       500:
  *         description: Server error
  */
@@ -93,7 +97,6 @@ router.post(
     registerUser
 );
 
-
 /**
  * @swagger
  * /pg/user/login:
@@ -101,6 +104,7 @@ router.post(
  *     summary: Login user
  *     tags:
  *       - Users
+ *
  *     requestBody:
  *       required: true
  *       content:
@@ -115,17 +119,44 @@ router.post(
  *                 type: string
  *                 format: email
  *                 example: test@example.com
+ *
  *               password:
  *                 type: string
  *                 format: password
  *                 example: password123
+ *
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *
+ *                 token:
+ *                   type: string
+ *                   description: JWT authentication token
+ *
+ *                 role:
+ *                   type: string
+ *                   enum:
+ *                     - User
+ *                     - Admin
+ *                   example: User
+ *
  *       400:
  *         description: Invalid request data
+ *
  *       401:
  *         description: Invalid email or password
+ *
+ *       429:
+ *         description: Too many login attempts
+ *
  *       500:
  *         description: Server error
  */
@@ -136,7 +167,6 @@ router.post(
     loginUser
 );
 
-
 /**
  * @swagger
  * /pg/user/profile:
@@ -146,13 +176,21 @@ router.post(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     responses:
  *       200:
  *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *
  *       401:
  *         description: Authentication required
+ *
  *       404:
  *         description: User not found
+ *
  *       500:
  *         description: Server error
  */
@@ -161,7 +199,6 @@ router.get(
     loginAuth,
     profileUser
 );
-
 
 /**
  * @swagger
@@ -172,6 +209,7 @@ router.get(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: query
  *         name: role
@@ -183,15 +221,20 @@ router.get(
  *             - Admin
  *         description: Filter statistics by user role
  *         example: User
+ *
  *     responses:
  *       200:
  *         description: User statistics retrieved successfully
- *       401:
- *         description: Authentication required
- *       403:
- *         description: Admin access required
+ *
  *       400:
  *         description: Invalid query parameters
+ *
+ *       401:
+ *         description: Authentication required
+ *
+ *       403:
+ *         description: Admin access required
+ *
  *       500:
  *         description: Server error
  */
@@ -203,7 +246,6 @@ router.get(
     getPgUserStats
 );
 
-
 /**
  * @swagger
  * /pg/user/users:
@@ -213,6 +255,7 @@ router.get(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: query
  *         name: page
@@ -222,6 +265,7 @@ router.get(
  *           minimum: 1
  *           example: 1
  *         description: Page number
+ *
  *       - in: query
  *         name: limit
  *         required: false
@@ -230,6 +274,7 @@ router.get(
  *           minimum: 1
  *           example: 10
  *         description: Number of users per page
+ *
  *       - in: query
  *         name: search
  *         required: false
@@ -237,6 +282,7 @@ router.get(
  *           type: string
  *           example: hamza
  *         description: Search users by name or email
+ *
  *       - in: query
  *         name: role
  *         required: false
@@ -246,13 +292,17 @@ router.get(
  *             - User
  *             - Admin
  *         description: Filter users by role
+ *
  *     responses:
  *       200:
  *         description: Users retrieved successfully
+ *
  *       401:
  *         description: Authentication required
+ *
  *       403:
  *         description: Admin access required
+ *
  *       500:
  *         description: Server error
  */
@@ -263,7 +313,6 @@ router.get(
     getUsers
 );
 
-
 /**
  * @swagger
  * /pg/user/users/{id}:
@@ -273,23 +322,33 @@ router.get(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
+ *           example: 1
  *         description: User ID
+ *
  *     responses:
  *       200:
  *         description: User retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *
  *       401:
  *         description: Authentication required
+ *
  *       403:
  *         description: Admin access required
+ *
  *       404:
  *         description: User not found
+ *
  *       500:
  *         description: Server error
  */
@@ -300,7 +359,6 @@ router.get(
     getUserById
 );
 
-
 /**
  * @swagger
  * /pg/user/users/{id}:
@@ -310,14 +368,16 @@ router.get(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
+ *           example: 1
  *         description: User ID
+ *
  *     requestBody:
  *       required: true
  *       content:
@@ -328,25 +388,35 @@ router.get(
  *               name:
  *                 type: string
  *                 example: Updated User
+ *
  *               email:
  *                 type: string
  *                 format: email
  *                 example: updated@example.com
+ *
  *               role:
  *                 type: string
  *                 enum:
  *                   - User
  *                   - Admin
  *                 example: User
+ *
  *     responses:
  *       200:
  *         description: User updated successfully
+ *
+ *       400:
+ *         description: Invalid request data
+ *
  *       401:
  *         description: Authentication required
+ *
  *       403:
  *         description: Admin access required
+ *
  *       404:
  *         description: User not found
+ *
  *       500:
  *         description: Server error
  */
@@ -357,7 +427,6 @@ router.patch(
     updateUser
 );
 
-
 /**
  * @swagger
  * /pg/user/users/{id}:
@@ -367,23 +436,29 @@ router.patch(
  *       - Users
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
+ *           example: 1
  *         description: User ID
+ *
  *     responses:
  *       200:
  *         description: User deleted successfully
+ *
  *       401:
  *         description: Authentication required
+ *
  *       403:
  *         description: Admin access required
+ *
  *       404:
  *         description: User not found
+ *
  *       500:
  *         description: Server error
  */
@@ -393,7 +468,6 @@ router.delete(
     adminOnly,
     deleteUser
 );
-
 
 /**
  * @swagger
@@ -405,23 +479,35 @@ router.delete(
  *       - Orders
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         example: 1
+ *           example: 1
  *         description: User ID
+ *
  *     responses:
  *       200:
  *         description: User orders retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *
  *       401:
  *         description: Authentication required
+ *
  *       403:
  *         description: Admin access required
+ *
  *       404:
  *         description: User not found
+ *
  *       500:
  *         description: Server error
  */
@@ -431,6 +517,5 @@ router.get(
     adminOnly,
     getUserOrders
 );
-
 
 export default router;

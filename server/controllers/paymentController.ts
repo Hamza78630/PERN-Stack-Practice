@@ -5,7 +5,9 @@ import type { Server } from "socket.io";
 
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 import sequelize from "../db.js";
+import { emailQueue } from "../queues/emailQueue.js";
 
 dotenv.config();
 
@@ -226,6 +228,28 @@ const markOrderPaid = async (
             amount: order.amount,
             currency: order.currency
         });
+    }
+
+    // Queue the confirmation email instead of sending it inline — the
+    // webhook handler must return quickly or Stripe will retry it.
+    const buyer = await User.findByPk(order.userid);
+
+    if (buyer) {
+        emailQueue
+            .add("order-confirmation-email", {
+                type: "orderConfirmation",
+                to: buyer.email,
+                name: buyer.name,
+                orderId: order.orderid,
+                amount: order.amount,
+                currency: order.currency
+            })
+            .catch((error) =>
+                console.error(
+                    "Failed to queue order confirmation email:",
+                    (error as Error).message
+                )
+            );
     }
 };
 

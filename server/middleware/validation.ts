@@ -30,6 +30,19 @@ export const productQuerySchema = z.object({
     maxPrice: z.coerce.number().int().min(0).optional()
 }).strict();
 
+export const orderSchema = z.object({
+    productId: z.coerce
+        .number()
+        .int()
+        .positive(),
+
+    quantity: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(10)
+}).strict();
+
 export const checkoutSchema = z.object({
     // No body is required today (checkout is a fixed-price "Premium Support"
     // purchase), but accepting an optional quantity keeps this endpoint

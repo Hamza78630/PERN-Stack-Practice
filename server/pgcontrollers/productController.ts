@@ -4,6 +4,7 @@ import { Op, Transaction } from "sequelize";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import sequelize from "../db.js";
+import { invalidateCache } from "../middleware/cache.js";
 
 interface HttpError extends Error {
     statusCode?: number;
@@ -27,6 +28,12 @@ export const createProduct = async (
                 description,
                 price
             });
+
+        // A new product makes every cached /pg/products listing page
+        // stale (it could now show up in a search/page/price filter).
+        invalidateCache("/pg/products").catch((error) =>
+            console.error("Cache invalidation failed:", (error as Error).message)
+        );
 
         return res.status(201).json({
             success: true,
@@ -108,6 +115,87 @@ export const getProducts = async (
     }
 };
 
+export const createOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const {
+            productId,
+            quantity
+        } = req.body;
+
+        const userId = Number(req.user!.id);
+
+        const order = await sequelize.transaction(async (t) => {
+            const product =
+                await Product.findByPk(
+                    productId,
+                    {
+                        transaction: t
+                    }
+                );
+
+            if (!product) {
+                const notFound: HttpError =
+                    new Error("Product not found");
+
+                notFound.statusCode = 404;
+
+                throw notFound;
+            }
+
+            const amount =
+                product.price * quantity;
+
+            const newOrder =
+                await Order.create(
+                    {
+                        userid: userId,
+                        amount,
+                        currency: "usd",
+                        status: "pending"
+                    },
+                    {
+                        transaction: t
+                    }
+                );
+
+            await newOrder.addProduct(
+                product,
+                {
+                    through: {
+                        quantity
+                    },
+                    transaction: t
+                }
+            );
+
+            return newOrder;
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Order created successfully",
+            data: order
+        });
+
+    } catch (error) {
+        const httpError = error as HttpError;
+
+        if (httpError.statusCode) {
+            return res
+                .status(httpError.statusCode)
+                .json({
+                    success: false,
+                    message: httpError.message
+                });
+        }
+
+        next(error);
+    }
+};
 
 export const addProductToOrder = async (
     req: Request,

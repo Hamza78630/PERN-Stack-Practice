@@ -5,6 +5,7 @@ import { Op } from "sequelize";
 
 import User from "../models/User.js";
 import Order from "../models/Order.js";
+import { emailQueue } from "../queues/emailQueue.js";
 
 const createAccessToken = (user: User) => {
     return jwt.sign(
@@ -79,6 +80,19 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
                 }
             );
         }
+
+        // Sending the welcome email is queued (not awaited inline) so a
+        // slow/down SMTP server never delays or fails the registration
+        // response — the emailWorker process delivers it separately.
+        emailQueue
+            .add("welcome-email", {
+                type: "welcome",
+                to: newUser.email,
+                name: newUser.name
+            })
+            .catch((error) =>
+                console.error("Failed to queue welcome email:", (error as Error).message)
+            );
 
         return res.status(201).json({
             status: "success",

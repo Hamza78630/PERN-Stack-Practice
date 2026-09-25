@@ -4,11 +4,16 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev": "tsx watch server.ts",
+    "worker": "tsx watch workers/emailWorker.ts",
+    "worker:start": "node dist/workers/emailWorker.js",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migrate": "sequelize-cli db:migrate",
+    "migrate:undo": "sequelize-cli db:migrate:undo"
   },
   "keywords": [],
   "author": "",
@@ -16,14 +21,17 @@
   "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.34.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "helmet": "^8.3.0",
+    "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.12.0",
     "multer": "^2.2.0",
+    "nodemailer": "^10.0.10",
     "pg": "^8.23.0",
     "sequelize": "^6.37.8",
     "socket.io": "^4.8.3",
@@ -46,7 +54,11 @@
     "@types/node@26.4.1": true,
     "swagger-jsdoc@6.3.0": true,
     "swagger-ui-express@5.0.1": true,
-    "morgan@1.12.0": true
+    "morgan@1.12.0": true,
+    "bcrypt": true,
+    "msgpackr-extract@3.0.4": true,
+    "esbuild": true,
+    "@scarf/scarf": true
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -56,10 +68,15 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^26.4.1",
+    "@types/nodemailer": "^6.4.17",
+    "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "sequelize-cli": "^6.6.5",
+    "supertest": "^7.0.0",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^6.4.3",
+    "vitest": "^5.0.1"
   }
 }

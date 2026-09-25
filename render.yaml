@@ -1,0 +1,103 @@
+# Render Blueprint — deploys the API, the email worker, and their
+# managed Postgres + Redis. From the Render dashboard: New > Blueprint,
+# point it at this repo, then fill in the "sync: false" secrets below.
+services:
+  - type: web
+    name: techsolve-server
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PG_HOST
+        fromDatabase:
+          name: techsolve-db
+          property: host
+      - key: PG_PORT
+        fromDatabase:
+          name: techsolve-db
+          property: port
+      - key: PG_DATABASE
+        fromDatabase:
+          name: techsolve-db
+          property: database
+      - key: PG_USER
+        fromDatabase:
+          name: techsolve-db
+          property: user
+      - key: PG_PASSWORD
+        fromDatabase:
+          name: techsolve-db
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          name: techsolve-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: techsolve-redis
+          type: redis
+          property: port
+      - key: CLIENT_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: worker
+    name: techsolve-email-worker
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    dockerCommand: node dist/workers/emailWorker.js
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_HOST
+        fromService:
+          name: techsolve-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: techsolve-redis
+          type: redis
+          property: port
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: redis
+    name: techsolve-redis
+    plan: starter
+    ipAllowList: []
+
+databases:
+  - name: techsolve-db
+    plan: starter
+    postgresMajorVersion: "16"

@@ -15,7 +15,6 @@ import {
 
 const router = express.Router();
 
-
 /**
  * @swagger
  * /payment/create-checkout-session:
@@ -25,6 +24,19 @@ const router = express.Router();
  *       - Payments
  *     security:
  *       - bearerAuth: []
+ *
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 2
+ *
  *     responses:
  *       200:
  *         description: Stripe checkout session created successfully
@@ -36,11 +48,18 @@ const router = express.Router();
  *                 success:
  *                   type: boolean
  *                   example: true
+ *
  *                 url:
  *                   type: string
- *                   example: https://checkout.stripe.com/example
+ *                   format: uri
+ *                   example: "https://checkout.stripe.com/example"
+ *
+ *       400:
+ *         description: Invalid request data
+ *
  *       401:
  *         description: Authentication required
+ *
  *       500:
  *         description: Payment session creation failed
  */
@@ -50,6 +69,5 @@ router.post(
     validateBody(checkoutSchema),
     createCheckoutSession
 );
-
 
 export default router;

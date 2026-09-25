@@ -49,10 +49,9 @@ const options = {
                     scheme: "bearer",
                     bearerFormat: "JWT",
                     description:
-                        "Enter your JWT token as: Bearer <token>"
+                        "Enter the JWT token returned by the login endpoint."
                 }
             },
-
 
             // ==========================================
             // COMMON SCHEMAS
@@ -62,6 +61,13 @@ const options = {
 
                 User: {
                     type: "object",
+
+                    required: [
+                        "userid",
+                        "name",
+                        "email",
+                        "role"
+                    ],
 
                     properties: {
                         userid: {
@@ -97,9 +103,15 @@ const options = {
                     }
                 },
 
-
                 Product: {
                     type: "object",
+
+                    required: [
+                        "productid",
+                        "name",
+                        "description",
+                        "price"
+                    ],
 
                     properties: {
                         productid: {
@@ -125,9 +137,16 @@ const options = {
                     }
                 },
 
-
                 Order: {
                     type: "object",
+
+                    required: [
+                        "orderid",
+                        "userid",
+                        "amount",
+                        "currency",
+                        "status"
+                    ],
 
                     properties: {
                         orderid: {
@@ -152,17 +171,57 @@ const options = {
 
                         status: {
                             type: "string",
+                            enum: [
+                                "pending",
+                                "paid",
+                                "failed"
+                            ],
                             example: "pending"
                         },
 
                         stripesessionid: {
                             type: "string",
-                            example:
-                                "cs_test_example"
+                            example: "cs_test_example"
                         }
                     }
                 },
 
+                OrderProduct: {
+                    type: "object",
+
+                    properties: {
+                        orderid: {
+                            type: "integer",
+                            example: 1
+                        },
+
+                        productid: {
+                            type: "integer",
+                            example: 1
+                        },
+
+                        name: {
+                            type: "string",
+                            example: "Premium Support"
+                        },
+
+                        description: {
+                            type: "string",
+                            example:
+                                "Technical support package"
+                        },
+
+                        price: {
+                            type: "integer",
+                            example: 2000
+                        },
+
+                        quantity: {
+                            type: "integer",
+                            example: 1
+                        }
+                    }
+                },
 
                 Error: {
                     type: "object",
@@ -186,6 +245,7 @@ const options = {
 
     // Swagger will search these files for
     // @swagger endpoint documentation.
+
     apis: [
         "./routes/*.ts",
         "./pgRoutes/*.ts"

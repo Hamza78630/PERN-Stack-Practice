@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: techsolve
+          POSTGRES_PASSWORD: techsolve
+          POSTGRES_DB: techsolve_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U techsolve"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: server
+
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ci-test-jwt-secret-please-change-me-32chars
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_USER: techsolve
+      PG_PASSWORD: techsolve
+      PG_DATABASE: techsolve_test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      STRIPE_SECRET_KEY: sk_test_dummy_key_for_ci
+      STRIPE_WEBHOOK_SECRET: whsec_dummy_key_for_ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run database migrations
+        run: npx sequelize-cli db:migrate --env test
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  docker:
+    needs: server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build server Docker image
+        run: docker build -t techsolve-server ./server
+
+  # Runs only on main, after tests + the Docker build both pass.
+  # Talks to Render's deploy-hook API, so it needs no cloud credentials
+  # beyond the one secret URL — swap this step for your host's
+  # equivalent (Railway, Fly.io, a self-hosted webhook, etc).
+  deploy:
+    needs: [server, docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret not set — skipping deploy trigger."
+            exit 0
+          fi
+          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

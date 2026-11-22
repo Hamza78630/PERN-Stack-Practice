@@ -41,6 +41,7 @@ const Register = () => {
                 formData.append("avatar", avatar);
             }
 
+            console.log(import.meta.env.VITE_API_URL);
             const response = await fetch(`${import.meta.env.VITE_API_URL}/pg/user/registration`, {
                 method: "POST",
                 body: formData

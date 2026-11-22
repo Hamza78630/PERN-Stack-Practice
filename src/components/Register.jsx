@@ -41,7 +41,7 @@ const Register = () => {
                 formData.append("avatar", avatar);
             }
 
-            const response = await fetch("http://localhost:3002/pg/user/registration", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/pg/user/registration`, {
                 method: "POST",
                 body: formData
             });

@@ -43,7 +43,7 @@ const UserDashboard = () => {
             const token = localStorage.getItem("token");
 
             const response = await fetch(
-                "http://127.0.0.1:3002/payment/create-checkout-session",
+                `${import.meta.env.VITE_API_URL}/payment/create-checkout-session`,
                 {
                     method: "POST",
                     headers: {
